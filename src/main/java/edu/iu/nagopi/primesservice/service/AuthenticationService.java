@@ -1,6 +1,7 @@
 package edu.iu.nagopi.primesservice.service;
 
 import edu.iu.nagopi.primesservice.model.Customer;
+import edu.iu.nagopi.primesservice.repository.AuthenticationDBRepository;
 import edu.iu.nagopi.primesservice.repository.AuthenticationFileRepository;
 import edu.iu.nagopi.primesservice.repository.IAuthenticationRepository;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -12,20 +13,21 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 
 @Service
-public class AuthenticationService implements IAuthenticationService, UserDetailsService {
-    IAuthenticationRepository authenticationRepository;
+public abstract class AuthenticationService implements IAuthenticationService, UserDetailsService {
+    AuthenticationDBRepository authenticationRepository;
 
-    public AuthenticationService(IAuthenticationRepository authenticationRepository) {
+    public AuthenticationService(AuthenticationDBRepository authenticationRepository) {
         this.authenticationRepository = authenticationRepository;
     }
     @Override
-    public boolean register(Customer customer) throws IOException{
+    public Customer register(Customer customer) throws IOException{
         BCryptPasswordEncoder bc = new BCryptPasswordEncoder();
         String passwordEncoded = bc.encode(customer.getPassword());
         customer.setPassword(passwordEncoded);
@@ -33,6 +35,7 @@ public class AuthenticationService implements IAuthenticationService, UserDetail
     }
 
     @RestController
+    @CrossOrigin({"http://127.0.0.1:5500"})
     public class AuthenticationController {
         private final IAuthenticationService authenticationService;
         private final AuthenticationManager authenticationManager;
@@ -66,7 +69,7 @@ public class AuthenticationService implements IAuthenticationService, UserDetail
                 throw new UsernameNotFoundException("");
             }
             return User.withUsername(username).password(customer.getPassword()).build();
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
